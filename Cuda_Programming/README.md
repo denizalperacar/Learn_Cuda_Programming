@@ -74,5 +74,3 @@ _For instance for matrix vector multiplications one can send sets of rows to dif
 
 
 
-
-
