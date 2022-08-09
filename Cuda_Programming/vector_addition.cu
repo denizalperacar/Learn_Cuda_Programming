@@ -21,22 +21,42 @@ void print(int *a, int *b, int *c) {
     }    
 }
 
+__global__ void gpu_add(int *a, int* b, int* c) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    c[idx] = a[idx] + b[idx];
+}
+
 int main() {
     int *a, *b, *c;
+    int *a_, *b_, *c_;
     int size = N * sizeof(int);
 
-    // allocate 
+    // allocate in Host
     a = (int *) malloc(size); 
     b = (int *) malloc(size); 
     c = (int *) malloc(size);
 
-    // initialize
+    // initialize in Host
     arangeN(a); 
     arangeN(b);
+    
+    // allocate device pointers
+    cudaMalloc(&a_, N * sizeof(int));
+    cudaMalloc(&b_, N * sizeof(int));
+    cudaMalloc(&c_, N * sizeof(int));
+
+    // copy the data to the device
+    cudaMemcpy(a_, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(b_, b, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(c_, c, size, cudaMemcpyHostToDevice);
+
+    gpu_add<<<4,128>>>(a_, b_,c_);
+    cudaMemcpy(c, c_, size, cudaMemcpyDeviceToHost);
+
 
     // perform operations
-    add(a,b,c);
     print(a,b,c);
     free(a); free(b); free(c);
+    cudaFree(a_); cudaFree(b_); cudaFree(c_);
     return 0;
 }

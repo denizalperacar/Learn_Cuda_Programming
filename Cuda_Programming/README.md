@@ -12,9 +12,11 @@ In CUDA, there are two processors that work with each other. The `host` is usual
 ## GPU Architecture
 
 
-CUDA thread [Executes as] CUDA Core/SIMD code 
-CUDA block [Executes on] Streaming multiprocessor 
-GRID/kernel [Executes on] GPU device
+* CUDA thread [Executes as] CUDA Core/SIMD code 
+* CUDA block [Executes on] Streaming multiprocessor 
+* GRID/kernel [Executes on] GPU device
+
+---
 
 * CUDA Threads: CUDA threads execute on a CUDA core. CUDA threads are different from CPU threads. CUDA threads are extremely lightweight and provide fast context switching. The reason for fast context switching is due to the availability of a large register size in a GPU and hardware-based scheduler. The thread context is present in registers compared to CPU, where the thread handle resides in a lower memory hierarchy such as a cache. Hence, when one thread is idle/waiting, another thread that is ready can start executing with almost no delay. _Each CUDA thread must execute the same kernel and work independently on different data (SIMT)_.
 
@@ -24,15 +26,53 @@ GRID/kernel [Executes on] GPU device
 
 ## Vector Addition in Cuda
 
-* **Memory allocation on GPU**: CPU memory and GPU memory are physically1. separate memory. malloc allocates memory on the CPU's RAM. The GPU kernel/device function can only access memory that's allocated/pointing to the device memory. To allocate memory on the GPU, _we need to use the cudaMalloc API_. _Unlike the malloc command, cudaMalloc does not return a pointer to allocated memory; instead, it takes a pointer reference as a parameter and updates the same with the allocated memory_. `cudaMalloc((void *)&d_a, N * sizeof(int));`
+* **Memory allocation on GPU**: CPU memory and GPU memory are physically1. separate memory. malloc allocates memory on the CPU's RAM. The GPU kernel/device function can only access memory that's allocated/pointing to the device memory. To allocate memory on the GPU, _we need to use the cudaMalloc API_. _Unlike the malloc command, cudaMalloc does not return a pointer to allocated memory; instead, it takes a pointer reference as a parameter and updates the same with the allocated memory_. 
+This syntax shown in the book doesn not work: `cudaMalloc((void *)&d_a, N * sizeof(int));` remove the temporary void * cast then it works. `cudaMalloc(&d_a, N * sizeof(int));`
 
 * **Transfer data from host memory to device memory**: The host data is then copied to the device's memory, which was allocated using the cudaMalloc command used in the previous step. The API that's used to copy the data between the host and device and vice versa is cudaMemcpy. Like other memcopy commands, this API requires the destination pointer, source pointer, and size. One additional parameter it takes is the direction of copy, that is, whether we are copying from the host to the device or from the device to the host. In the latest version of CUDA, this is optional since the driver is capable of understanding whether the pointer points to the host memory or device memory. Note that there is an asynchronous alternative to cudaMemcpy. This will be covered in more detail in other chapters.
+`cudaMemcpy(cpyto, cpyfrom, sizeofarray, cudaMemcpyHostToDevice);`
 
 * **<<<block size, thread size>>>**
 
 * **cudaDeviceSynchronize**: wait for the kernel execution to finish.
 
 * **transfer data from device to host**: Use the same `cudaMemcpy` API to copy the data back from the device to the host for post-processing or validation duties such as printing. The only change here, compared to the first step, is that _we reverse the direction of the copy, that is, the destination pointer points to the host while the source pointer points to the device allocated in memory_.
+`cudaMemcpy(cpyto, cpyfrom, sizeofarray, cudaMemcpyDeviceToHost);`
 
 * **Free the allocated GPU memory**: use cudaFree
+
+### multiple blocks
+
+device_add<<<N, 1>>> : this will execute the device_add function N times in parallel instead of once. *Each parallel invocation of the device_add function is referred to as a block.* By using `blockIdx.x` to index the array, each block handles a different element of the array.
+
+### multiple threads 
+
+device_add<<<1,N>>> : This will execute the device_add function N times in parallel instead of once. *Each parallel invocation of the device_add function is referred to as a thread.* By using `threadIdx.x` to index the array, each block handles a different element of the array.
+
+### Combination of block and thread
+
+`blockDim.x` : The number of threads in each block
+
+```C
+__global__ void gpu_add(int *a, int* b, int* c) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    c[idx] = a[idx] + b[idx];
+}
+```
+
+## Notes on threads and blocks
+
+* CUDA programming model allows communication for threads within the same block.
+* Threads belonging to different blocks cannot communicate/synchronize with each other during the execution of the kernel.
+
+* **Blocks are scheduled independently -> use for embarassingly parallel tasks.** also more hardware blocks more computations at the same time.
+_For instance for matrix vector multiplications one can send sets of rows to different blocks to be multiplied in parallel._
+
+* threads communicate via `shared memory`.
+
+## Error Reporting in Cuda
+
+
+
+
 
