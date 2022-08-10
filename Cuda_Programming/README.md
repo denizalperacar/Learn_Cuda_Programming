@@ -1,5 +1,8 @@
 This repository contains my notes from the book learn cuda programming
 
+# Syntax Cheat
+**Kernel call**: `MyKernel<<< blocks, threads >>> (...);`
+
 # Chapter 1 Notes
 
 In CUDA, there are two processors that work with each other. The `host` is usually referred to as the CPU, while the `device` is usually referred to as the GPU.
@@ -71,6 +74,62 @@ _For instance for matrix vector multiplications one can send sets of rows to dif
 * threads communicate via `shared memory`.
 
 ## Error Reporting in Cuda
+Most CUDA functions call `cudaError_t`, which is basically an enumeration type. cudaSuccess (value 0) indicates a 0 error.
 
+```C
+cudaError_t = error;
+error = cudaMemcpy(...)
+if (error) printf("%s", cudaGetErrorString(err));
+```
 
+No return value for kernel launches, so for such cases use cudaGetLastError();
+cudaGetLastError() : cuda error for the last launched function including the kernel.
+
+## Data types in cuda
+
+* supports all the standard datatypes
+* make sure to align the data call of the same type then cuda accesses the same memory.
+* CUDA programming supports complex data structures such as structures and classes.
+* one can enforce alignment for class types via `__align__`
+
+```C
+struct __align__(16) {
+    float r, g, b;
+}
+```
+
+# Chapter 2
+
+## Memory Profiler
+
+call 'nvvp' 
+
+nvcc -o vector_addition vector_addition.cu
+nvprof -o vector_addition.nvvp ./vector_addition
+
+## Global / device memory
+
+1. what is global memory
+
+* This mem is visible to all threads in the kernel
+* This mem is visible to CPU
+* use `cudaMalloc` and `cudaFree` explicitly to manage the memory
+* data is declared as `__device__`
+* data can be transfered by `cudaMemcpy()`
+* After memory allocation in device *pointer of those vaibles will point to the gloabal memory*
+
+2. How to load aor store data from global mem to cache
+
+3. How to access mem optimally
+
+* **Concept of warp** : The warp is a unit of thread scheduling/execution in SMs. Once a block has been assigned to an SM, it is divided into a
+32 -thread unit known as a warp 
+* All of the threads in a warp fetch and execute the same instruction when selected
+* To optimally utilize access from global memory, the access should coalesce 
+> * Coalesced global memory access: sequential memory access is adjacent
+> * Uncoalesced global memory access: sequential memory access is not adjacent
+
+4. How data reaches to warf form global memory via cache lines:
+
+Coalesced global memory access: sequential memory access is adjacent
 

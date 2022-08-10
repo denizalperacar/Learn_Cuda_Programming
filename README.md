@@ -1,5 +1,4 @@
 # Learn_Cuda_Programming
 
-[X] Day 1: P-31
-
-[] Day 2: 
+* [X] Day 1: P31
+* [X] Day 2: P45
