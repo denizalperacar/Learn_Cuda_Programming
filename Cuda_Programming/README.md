@@ -1,5 +1,7 @@
 This repository contains my notes from the book learn cuda programming
 
+# This book is abandaned due to many errors present in it.
+
 # Syntax Cheat
 **Kernel call**: `MyKernel<<< blocks, threads >>> (...);`
 
@@ -132,4 +134,15 @@ nvprof -o vector_addition.nvvp ./vector_addition
 4. How data reaches to warf form global memory via cache lines:
 
 Coalesced global memory access: sequential memory access is adjacent
+
+## Shared Memory
+
+* This provides a mechanism for users so that they can read/write data in a coalesced fashion from global memory and store it in memory, which acts like a cache but can be controlled by the user.
+
+* It is only visible to the threads in the same block. 
+* All of the threads in a block see the same version of a shared variable.
+* CUDA programmers can use shared variables to hold the data that was reused many times during the execution phase of the kernel.
+
+### The example code for the matrix transpose using the shared memory is wrong 
+It allocates a shared memory of size [BlockSize] [BlockSize] and then requires the block to __syncthreads() but the number of threads is higher 
 
